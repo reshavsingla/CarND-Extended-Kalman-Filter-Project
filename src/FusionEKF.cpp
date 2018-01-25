@@ -83,15 +83,6 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
       double theta = measurement_pack.raw_measurements_[1];
       double ro_dot = measurement_pack.raw_measurements_[2];
 
-      if(theta > M_PI)
-      {
-        theta = theta - 2 * M_PI;
-      }
-      else if(theta < -M_PI)
-      {
-        theta = theta + 2 * M_PI;
-      }
-
       x_radar << ro * cos(theta),ro * sin(theta),ro_dot * cos(theta),ro_dot * sin(theta) ;
       ekf_.x_ = x_radar ;
       ekf_.R_ = R_radar_;
@@ -171,19 +162,13 @@ void FusionEKF::ProcessMeasurement(const MeasurementPackage &measurement_pack) {
     double theta = measurement_pack.raw_measurements_[1];
     double ro_dot = measurement_pack.raw_measurements_[2];
 
-    if(theta > M_PI)
+    if (theta < M_PI and theta > - M_PI)
     {
-      theta = theta - 2 * M_PI;
+      x_radar << ro * cos(theta), ro * sin(theta), ro_dot * cos(theta), ro_dot * sin(theta);
+      ekf_.R_ = R_radar_;
+      ekf_.H_ = tools.CalculateJacobian(x_radar);
+      ekf_.UpdateEKF(measurement_pack.raw_measurements_);
     }
-    else if(theta < -M_PI)
-    {
-      theta = theta + 2 * M_PI;
-    }
-
-    x_radar << ro * cos(theta),ro * sin(theta),ro_dot * cos(theta),ro_dot * sin(theta) ;
-    ekf_.R_ = R_radar_;
-    ekf_.H_ = tools.CalculateJacobian(x_radar);
-    ekf_.UpdateEKF(measurement_pack.raw_measurements_);
   } else {
     // Laser updates
     ekf_.R_ = R_laser_;
